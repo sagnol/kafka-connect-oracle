@@ -15,24 +15,24 @@ import org.slf4j.LoggerFactory;
 
 public class OracleSqlUtils {
 
-    static final Logger log = LoggerFactory.getLogger(OracleSqlUtils.class);    
+    static final Logger log = LoggerFactory.getLogger(OracleSqlUtils.class);
 
-    public OracleSqlUtils(){
-        
+    public OracleSqlUtils() {
+
     }
 
-    public static Boolean getLogFilesV2(Connection conn,Long currScn) throws SQLException{        
+    public static Boolean getLogFilesV2(Connection conn, Long currScn) throws SQLException {
         int i = 0;
         String option;
-        List <String> logFilesBase = new ArrayList<String>();
-        List <String> logFilesLogmnr = new ArrayList<String>();
+        List<String> logFilesBase = new ArrayList<String>();
+        List<String> logFilesLogmnr = new ArrayList<String>();
         String sqlBase = OracleConnectorSQL.LOGMINER_LOG_FILES_LOG$;
-        sqlBase = sqlBase.replace(":vcurrscn",currScn.toString());
+        sqlBase = sqlBase.replace(":vcurrscn", currScn.toString());
         PreparedStatement ps = conn.prepareCall(sqlBase);
-        log.info("################################# Scanning Log Files for SCN :{}",currScn);
+        log.info("################################# Scanning Log Files for SCN :{}", currScn);
         ResultSet rs = ps.executeQuery();
-        while (rs.next()){
-            log.info("Base log files {}",rs.getString("NAME"));
+        while (rs.next()) {
+            log.info("Base log files {}", rs.getString("NAME"));
             logFilesBase.add(rs.getString("NAME"));
         }
         rs.close();
@@ -40,55 +40,55 @@ public class OracleSqlUtils {
 
         ps = conn.prepareCall(OracleConnectorSQL.LOGMINER_LOG_FILES_LOGMNR$);
         rs = ps.executeQuery();
-        while (rs.next()){
-            log.info("logmnr_logs log files {}",rs.getString("NAME"));
+        while (rs.next()) {
+            log.info("logmnr_logs log files {}", rs.getString("NAME"));
             logFilesLogmnr.add(rs.getString("NAME"));
         }
 
-        if (!logFilesBase.equals(logFilesLogmnr)){
+        if (!logFilesBase.equals(logFilesLogmnr)) {
             ListIterator<String> iterator = logFilesBase.listIterator();
-            while (iterator.hasNext()){
-                String logFile = iterator.next();                
-                log.info("Log file will be mined {}",logFile);
-                if (i==0){
+            while (iterator.hasNext()) {
+                String logFile = iterator.next();
+                log.info("Log file will be mined {}", logFile);
+                if (i == 0) {
                     option = "DBMS_LOGMNR.NEW";
                     i++;
-                }else {
+                } else {
                     option = "DBMS_LOGMNR.ADDFILE";
-                }            
-                executeCallableStmt(conn, OracleConnectorSQL.LOGMINER_ADD_LOGFILE.replace(":logfilename",logFile).replace(":option", option));                
+                }
+                executeCallableStmt(conn, OracleConnectorSQL.LOGMINER_ADD_LOGFILE.replace(":logfilename", logFile).replace(":option", option));
             }
         }
         log.info("#################################");
         rs.close();
-        ps.close();        
-        return i>0 ? true : false;        
+        ps.close();
+        return i > 0 ? true : false;
     }
 
-    public static Boolean getLogFiles(Connection conn,String sql,Long currScn) throws SQLException{        
+    public static Boolean getLogFiles(Connection conn, String sql, Long currScn) throws SQLException {
         int i = 0;
         String option;
-        List<String> logFiles=null;
-        String pSql = sql.replace(":vcurrscn",currScn.toString());        
+        List<String> logFiles = null;
+        String pSql = sql.replace(":vcurrscn", currScn.toString());
         PreparedStatement ps = conn.prepareCall(pSql);
         log.info(pSql);
-        log.info("################################# Scanning Log Files for SCN :{}",currScn);
+        log.info("################################# Scanning Log Files for SCN :{}", currScn);
         ResultSet rs = ps.executeQuery();
-        while (rs.next()){
+        while (rs.next()) {
             logFiles = Arrays.asList(rs.getString("NAME").split(" "));
         }
-        if (logFiles != null){
+        if (logFiles != null) {
             ListIterator<String> iterator = logFiles.listIterator();
-            while (iterator.hasNext()){
+            while (iterator.hasNext()) {
                 String logFile = iterator.next();
-                log.info("Log file will be mined {}",logFile);
-                if (i==0){
+                log.info("Log file will be mined {}", logFile);
+                if (i == 0) {
                     option = "DBMS_LOGMNR.NEW";
                     i++;
-                }else {
+                } else {
                     option = "DBMS_LOGMNR.ADDFILE";
-                }            
-                executeCallableStmt(conn, OracleConnectorSQL.LOGMINER_ADD_LOGFILE.replace(":logfilename",logFile).replace(":option", option));
+                }
+                executeCallableStmt(conn, OracleConnectorSQL.LOGMINER_ADD_LOGFILE.replace(":logfilename", logFile).replace(":option", option));
             }
         }
 
@@ -96,25 +96,25 @@ public class OracleSqlUtils {
         rs.close();
         ps.close();
 
-        return i>0 ? true : false;
+        return i > 0 ? true : false;
     }
-    
-    public static void executeCallableStmt(Connection conn,String sql) throws SQLException{        
+
+    public static void executeCallableStmt(Connection conn, String sql) throws SQLException {
         CallableStatement s = conn.prepareCall(sql);
         s.execute();
         s.close();
     }
 
-    public static Long getCurrentScn(Connection conn) throws SQLException{
-        Long currentScn=0L;
+    public static Long getCurrentScn(Connection conn) throws SQLException {
+        Long currentScn = 0L;
         PreparedStatement ps = conn.prepareCall(OracleConnectorSQL.CURRENT_DB_SCN_SQL);
         ResultSet rs = ps.executeQuery();
-        while (rs.next()){
+        while (rs.next()) {
             currentScn = rs.getLong("CURRENT_SCN");
         }
         rs.close();
         ps.close();
         return currentScn;
-    }    
-    
+    }
+
 }
